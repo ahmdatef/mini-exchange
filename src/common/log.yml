@@ -1,0 +1,25 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  default:
+    format: '[%(asctime)s] [%(levelname)s] %(name)s@%(threadName)s --- %(message)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: default
+    level: !ENV ${LOG_LEVEL:DEBUG}
+    stream: ext://sys.stdout
+
+root:
+  level: !ENV ${LOG_LEVEL:DEBUG}
+  handlers: [console]
+
+loggers:
+  gunicorn.error:
+    level: !ENV ${LOG_LEVEL:DEBUG}
+    handlers: [console]
+  gunicorn.access:
+    level: !ENV ${LOG_LEVEL:DEBUG}
+    handlers: [console]

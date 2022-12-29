@@ -1,0 +1,82 @@
+version: '3.5'
+
+services:
+  vernemq:
+    environment:
+      - DOCKER_VERNEMQ_ACCEPT_EULA=yes
+      - DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on
+      - MQTT_TOPIC=thndr-trading
+    image: erlio/docker-vernemq
+    hostname: vernemq.vitrine.com
+    healthcheck:
+      test: ["CMD", "vernemq", "ping"]
+
+  streamer:
+    environment:
+      - MQTT_HOST=vernemq
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=thndr-trading
+    image: thndr/streamer:0.2
+    depends_on:
+      - vernemq
+
+  postgresql:
+    image: postgres
+    volumes:
+    - ./postgres.conf:/etc/postgresql/postgresql.conf
+    environment:
+      - POSTGRES_USER=postgres_user
+      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_DB=eventsourcing
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres_user", "-d", "eventsourcing"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    ports:
+      - 5432:5432
+
+  web:
+    build:
+      context: .
+      target: web
+    environment:
+      - MQTT_HOST=vernemq
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=thndr-trading
+      - PERSISTENCE_MODULE=eventsourcing.postgres
+      - POSTGRES_DBNAME=eventsourcing
+      - POSTGRES_USER=postgres_user
+      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+    ports:
+      - 8000:8000
+    depends_on:
+      vernemq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+    restart: always
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      - MQTT_HOST=vernemq
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=thndr-trading
+      - PERSISTENCE_MODULE=eventsourcing.postgres
+      - POSTGRES_DBNAME=eventsourcing
+      - POSTGRES_USER=postgres_user
+      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+    depends_on:
+      vernemq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+    restart: always

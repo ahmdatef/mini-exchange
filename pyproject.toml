@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "mini-exchange"
+version = "0.1.0"
+description = ""
+authors = ["Ahmed Atef <eng.ahmdatef@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pyaml-env = "^1.2.1"
+eventsourcing = "^9.2.16"
+fastapi = "^0.88.0"
+uvicorn = "^0.20.0"
+paho-mqtt = "^1.6.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
